@@ -8,7 +8,7 @@ The system ingests raw, unstructured B2B packaging enquiries across chat and ema
 
 ## 🚀 Business Problem & Operational Impact
 
-**Moti Packaging Industries (MPI)** specializes in rigid composite paper canisters, paper tubes, and core containers. Previously, the sales intake workflow faced major bottlenecks:
+**Moti Packaging Industries (MPI)** specializes in rigid composite paper canisters, paper tubes, and core containers. Previously, the sales intake workflow faced major operational bottlenecks:
 * **High Latency:** 24–48 hours spent manually clarifying missing packaging dimensions (diameter, height, volume).
 * **Wasted Capacity:** Sales engineers spending hours vetting out-of-scope enquiries (e.g., pure tinplate cans, plastic extrusion containers).
 * **Data Discrepancies:** Multiple sales reps responding to duplicate enquiries.
@@ -21,7 +21,6 @@ The system ingests raw, unstructured B2B packaging enquiries across chat and ema
 ---
 
 ## 🛠️ Architecture & Pipeline Data Flow
-
 
 ```mermaid
 flowchart TD
@@ -47,9 +46,12 @@ flowchart TD
     style G fill:#F8FAFC,stroke:#94A3B8,stroke-width:1px,color:#0F172A
     style H fill:#F8FAFC,stroke:#94A3B8,stroke-width:1px,color:#0F172A
     style I fill:#F8FAFC,stroke:#94A3B8,stroke-width:1px,color:#0F172A
+```
 
+---
 
-### Core Workflow Components:
+## 🧩 Core Workflow Components
+
 1. **Chat/Email Ingestion Trigger:** Captures raw, unstructured customer queries in freeform text.
 2. **Duplicate Detection (Python):** Intercepts repeated customer enquiries against a seen-cache before sending to the LLM, eliminating redundant API token costs.
 3. **AI Extraction & Classification (GPT-4o-mini):** 
@@ -89,3 +91,6 @@ The database feeds into an automated executive dashboard featuring:
 
 ### 2. Google Sheets Dashboard Generation
 1. Open your target Google Sheet (`MPI Enquiries Dashboard`).
+2. Navigate to **Extensions -> Apps Script**.
+3. Paste the contents of `dashboard_script.js` and click **Run** (`createMPIDashboard`).
+4. The dashboard tab will automatically generate with formulas, tables, and charts.
