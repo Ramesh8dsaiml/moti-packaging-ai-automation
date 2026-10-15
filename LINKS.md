@@ -1,0 +1,27 @@
+# 🔗 Moti Packaging Automation — Project Live Links
+
+Here are all the live, interactive system links and resources for the Moti Packaging Industries AI intake assignment:
+
+---
+
+### 1. 📊 Live Google Sheets Database & Executive Dashboard
+* **Live Link:** [MPI Enquiries Dashboard](https://docs.google.com/spreadsheets/d/1VHJo5Zhi2eK74F8xpFFRyPZAhCC_slG2dTTAKpB4zNc/edit?gid=1304431208#gid=1304431208)
+* **Description:** Contains live enquiry ingestion data (`Sheet1`) and formula-driven KPI metrics, Donut chart, Category Column chart, and Missing Specs Bar chart (`Dashboard`).
+
+---
+
+### 2. ⚙️ Live n8n Cloud Workflow
+* **Live Link:** [Moti Packaging Enquiry Intake](https://rameshworkflowsystem.app.n8n.cloud/assistant/20a61ccd-806d-4430-a27e-8253cc0f9cae)
+* **Description:** Interactive canvas running the automated pipeline (Chat Trigger -> Python Cache -> OpenAI LLM -> Formatter -> Google Sheets -> Error Logger).
+
+---
+
+### 3. 📂 GitHub Source Code Repository
+* **Live Link:** [moti-packaging-ai-automation](https://github.com/Ramesh8dsaiml/moti-packaging-ai-automation)
+* **Description:** Complete source repository including architecture diagrams, assumptions, production guardrails, `workflow.json`, and Apps Script dashboard generator.
+
+---
+
+### 4. 🎥 5-Minute Video Walkthrough
+* **Video Link:** `[Yahan Apni Video Ka Link Paste Karein (Loom / Google Drive)]`
+* **Description:** End-to-end screen recording demonstrating the n8n pipeline, live chat execution, zero-hallucination handling, and real-time dashboard updates.
