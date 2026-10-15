@@ -1,0 +1,137 @@
+function createMPIDashboard() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet1 = ss.getSheetByName("Sheet1");
+  
+  if (!sheet1) {
+    SpreadsheetApp.getUi().alert("Sheet1 nahi mili! Kripya check karein ki data wali sheet ka naam 'Sheet1' ho.");
+    return;
+  }
+  
+  // Refresh Dashboard tab cleanly
+  var dash = ss.getSheetByName("Dashboard");
+  if (dash) {
+    ss.deleteSheet(dash);
+  }
+  dash = ss.insertSheet("Dashboard");
+  
+  // 1. Full Width Header Title Banner (A1 to H1)
+  dash.getRange("A1:H1").merge()
+    .setValue("MOTI PACKAGING INDUSTRIES - ENQUIRIES DASHBOARD")
+    .setFontSize(14).setFontWeight("bold").setFontColor("#FFFFFF")
+    .setBackground("#1E3A8A").setHorizontalAlignment("center").setVerticalAlignment("middle");
+  dash.setRowHeight(1, 40);
+
+  // ----------------------------------------------------
+  // TABLE 1: ENQUIRY STATUS METRICS (Columns A & B)
+  // ----------------------------------------------------
+  dash.getRange("A3:B3").merge().setValue("Enquiry Status Metrics")
+    .setFontWeight("bold").setFontColor("#1E3A8A").setBackground("#DBEAFE");
+    
+  var kpis = [
+    ["Total Enquiries", "=COUNTA(Sheet1!A2:A)"],
+    ["Ready for Quotation", '=COUNTIF(Sheet1!M:M, "Ready for quotation")'],
+    ["Information Pending", '=COUNTIF(Sheet1!M:M, "More information required")'],
+    ["Not Currently Serviceable", '=COUNTIF(Sheet1!M:M, "Not currently serviceable")'],
+    ["Possible Duplicate", '=COUNTIF(Sheet1!M:M, "Possible duplicate enquiry")'],
+    ["Human Review Needed", '=COUNTIF(Sheet1!O:O, "YES")']
+  ];
+  
+  for (var i = 0; i < kpis.length; i++) {
+    dash.getRange(4 + i, 1).setValue(kpis[i][0]).setFontWeight("bold");
+    dash.getRange(4 + i, 2).setFormula(kpis[i][1]).setHorizontalAlignment("center").setFontWeight("bold");
+  }
+  dash.getRange("A4:B9").setBorder(true, true, true, true, true, true, "#94A3B8", SpreadsheetApp.BorderStyle.SOLID);
+  dash.getRange("A4:B9").setBackground("#F8FAFC");
+
+  // ----------------------------------------------------
+  // TABLE 2: PRODUCT BREAKDOWN (Columns D & E)
+  // ----------------------------------------------------
+  dash.getRange("D3:E3").merge().setValue("Product Category Breakdown")
+    .setFontWeight("bold").setFontColor("#1E3A8A").setBackground("#DBEAFE");
+    
+  var prods = [
+    ["Composite Canister", '=COUNTIF(Sheet1!E:E, "*Composite*")'],
+    ["TIN Can", '=COUNTIF(Sheet1!E:E, "*TIN*")'],
+    ["Paper Tube / Core", '=COUNTIF(Sheet1!E:E, "*Tube*") + COUNTIF(Sheet1!E:E, "*Core*")'],
+    ["Other / General", '=B4 - SUM(E4:E6)']
+  ];
+  
+  for (var j = 0; j < prods.length; j++) {
+    dash.getRange(4 + j, 4).setValue(prods[j][0]).setFontWeight("bold");
+    dash.getRange(4 + j, 5).setFormula(prods[j][1]).setHorizontalAlignment("center").setFontWeight("bold");
+  }
+  dash.getRange("D4:E7").setBorder(true, true, true, true, true, true, "#94A3B8", SpreadsheetApp.BorderStyle.SOLID);
+  dash.getRange("D4:E7").setBackground("#F8FAFC");
+
+  // ----------------------------------------------------
+  // TABLE 3: MISSING SPECS BOTTLENECK (Columns G & H)
+  // ----------------------------------------------------
+  dash.getRange("G3:H3").merge().setValue("Missing Specs Bottleneck")
+    .setFontWeight("bold").setFontColor("#1E3A8A").setBackground("#DBEAFE");
+
+  var missingData = [
+    ["Missing Diameter", '=COUNTIF(Sheet1!N:N, "*diameter*")'],
+    ["Missing Height", '=COUNTIF(Sheet1!N:N, "*height*")'],
+    ["Missing Quantity", '=COUNTIF(Sheet1!N:N, "*quantity*")']
+  ];
+
+  for (var k = 0; k < missingData.length; k++) {
+    dash.getRange(4 + k, 7).setValue(missingData[k][0]).setFontWeight("bold");
+    dash.getRange(4 + k, 8).setFormula(missingData[k][1]).setHorizontalAlignment("center").setFontWeight("bold");
+  }
+  dash.getRange("G4:H6").setBorder(true, true, true, true, true, true, "#94A3B8", SpreadsheetApp.BorderStyle.SOLID);
+  dash.getRange("G4:H6").setBackground("#F8FAFC");
+
+  // Column Width Formatting
+  dash.setColumnWidth(1, 185); // A
+  dash.setColumnWidth(2, 65);  // B
+  dash.setColumnWidth(3, 20);  // C (spacer)
+  dash.setColumnWidth(4, 180); // D
+  dash.setColumnWidth(5, 65);  // E
+  dash.setColumnWidth(6, 20);  // F (spacer)
+  dash.setColumnWidth(7, 180); // G
+  dash.setColumnWidth(8, 65);  // H
+
+  // ----------------------------------------------------
+  // CHART 1: DONUT CHART (Lead Classification)
+  // ----------------------------------------------------
+  var donutChart = dash.newChart()
+    .setChartType(Charts.ChartType.PIE)
+    .addRange(dash.getRange("A5:B8"))
+    .setPosition(11, 1, 5, 5)
+    .setOption("title", "Enquiry Status Breakdown")
+    .setOption("pieHole", 0.4)
+    .setOption("width", 320)
+    .setOption("height", 260)
+    .build();
+  dash.insertChart(donutChart);
+
+  // ----------------------------------------------------
+  // CHART 2: COLUMN CHART (Product Breakdown)
+  // ----------------------------------------------------
+  var columnChart = dash.newChart()
+    .setChartType(Charts.ChartType.COLUMN)
+    .addRange(dash.getRange("D4:E6"))
+    .setPosition(11, 4, 5, 5)
+    .setOption("title", "Enquiries by Product Type")
+    .setOption("width", 320)
+    .setOption("height", 260)
+    .setOption("legend", {position: "none"})
+    .build();
+  dash.insertChart(columnChart);
+
+  // ----------------------------------------------------
+  // CHART 3: HORIZONTAL BAR CHART (Missing Specs Analysis)
+  // ----------------------------------------------------
+  var barChart = dash.newChart()
+    .setChartType(Charts.ChartType.BAR)
+    .addRange(dash.getRange("G4:H6"))
+    .setPosition(11, 7, 5, 5)
+    .setOption("title", "Top Information Gaps in Leads")
+    .setOption("width", 330)
+    .setOption("height", 260)
+    .setOption("legend", {position: "none"})
+    .setOption("colors", ["#F59E0B"])
+    .build();
+  dash.insertChart(barChart);
+}

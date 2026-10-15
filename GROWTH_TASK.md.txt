@@ -1,0 +1,58 @@
+# Additional Growth Task — Moti Packaging Industries
+
+## 1. Follow-up Message (Email & WhatsApp Draft)
+**Context:** Lead from Rahul Mehta (FreshNest Foods) requesting 10,000 composite canisters for organic spices packaging.
+
+### Email Version
+**Subject:** Quotation in Progress: Composite Paper Canisters Enquiry [ENQ-FN9021]
+
+Dear Rahul,
+
+Thank you for reaching out to Moti Packaging Industries. 
+
+We have successfully logged your requirement for **10,000 food-grade composite paper canisters (73mm x 140mm)** with Easy-Open Ends (EOE) for your organic spice line. Our technical sales team is currently calculating the raw material and multi-colour label printing specs.
+
+You will receive our formal commercial proposal and production lead timelines within the next **4 to 6 business hours**. If you have specific barrier lining preferences (foil lining vs. greaseproof kraft), please feel free to reply directly to this email.
+
+Warm regards,  
+**Sales Operations Team**  
+Moti Packaging Industries  
+
+---
+
+### WhatsApp Version
+> *Hi Rahul! 👋 Thank you for contacting Moti Packaging Industries. We have received your enquiry for 10,000 composite canisters (73mm x 140mm) for FreshNest Foods. Our technical team is reviewing your specs and preparing your wholesale quotation. Expect our formal pricing within 4 hours! 📦*
+
+---
+
+## 2. B2B LinkedIn Thought Leadership Post
+
+**Hook:** Is your packaging eating into your margins and your ESG compliance? 📦🌱
+
+Most D2C food brands are trapped between two extremes:
+1. Rigid Tin & Metal Cans — Heavy freight costs, high carbon footprint, and unpredictable supply chains.
+2. Flimsy Plastic Jars — Microplastic concerns and tightening plastic waste management regulations.
+
+At **Moti Packaging Industries**, we manufacture high-barrier **Composite Paper Canisters** engineered for premium food, beverage, and nutraceutical brands.
+
+Why leading brands are switching to composite paper packaging:
+✅ **Hermetic Barrier Protection:** Food-grade foil lining keeps moisture, oxygen, and aromas locked in.
+✅ **Lightweight Freight:** 40% lighter than conventional metal tins, drastically lowering logistics emissions.
+✅ **Recyclable & Sustainable:** 85%+ biodegradable kraft board core supporting circular economy goals.
+✅ **Premium Shelf Presence:** Seamless cylindrical canvas for high-definition 6-colour CMYK printing and hot-foil stamping.
+
+Whether you are packing green tea, organic spices, protein powders, or cookies — rigid paper packaging is no longer just an eco-statement. It’s a commercial advantage.
+
+📩 Send us a direct message or drop your specifications below to receive a custom sample kit and pricing matrix.
+
+#SustainablePackaging #B2BManufacturing #CompositeCans #FoodPackaging #GreenSupplyChain #MotiPackaging
+
+---
+
+## 3. Technical Guardrails Protocol (Preventing AI Hallucinations)
+
+To prevent the LLM from making inaccurate technical claims or committing to non-viable manufacturing parameters, the workflow enforces a **3-tier guardrail system**:
+
+1. **Deterministic System Boundary:** The LLM prompt explicitly restricts the scope to composite paper cans, rigid paper tubes, and core containers. Any requests for plastic extrusion, tinplate drums, or glass jars are strictly classified as `Not currently serviceable`.
+2. **Zero-Hallucination Policy on Tooling Dimensions:** The model is prohibited from guessing or approximating missing diameters or heights. If a dimension is missing, it is extracted as `null`, flagged in `missing_fields`, and routed to `More information required`.
+3. **Human-in-the-Loop Threshold:** High-volume orders (>50,000 units), custom barrier requests (boil-proof, liquid packaging), or unusual dimensions automatically trigger `human_review_required = true`, halting automated pricing commitments until vetted by senior plant engineers.
