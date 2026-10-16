@@ -11,7 +11,7 @@ Here are all the live, interactive system links and resources for the Moti Packa
 ---
 
 ### 2. ⚙️ Live n8n Cloud Workflow
-* **Live Link:** [Moti Packaging Enquiry Intake]https://rameshworkflowsystem.app.n8n.cloud/webhook/6f4c48e3-21ed-4c09-9163-c1b3118d78a5/chat
+* **Live Link:** https://rameshworkflowsystem.app.n8n.cloud/webhook/6f4c48e3-21ed-4c09-9163-c1b3118d78a5/chat
 * **Description:** Interactive canvas running the automated pipeline (Chat Trigger -> Python Cache -> OpenAI LLM -> Formatter -> Google Sheets -> Error Logger).
 
 ---
