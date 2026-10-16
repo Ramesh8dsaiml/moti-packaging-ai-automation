@@ -21,7 +21,3 @@ Here are all the live, interactive system links and resources for the Moti Packa
 * **Description:** Complete source repository including architecture diagrams, assumptions, production guardrails, `workflow.json`, and Apps Script dashboard generator.
 
 ---
-
-### 4. 🎥 5-Minute Video Walkthrough
-* **Video Link:** `[Yahan Apni Video Ka Link Paste Karein (Loom / Google Drive)]`
-* **Description:** End-to-end screen recording demonstrating the n8n pipeline, live chat execution, zero-hallucination handling, and real-time dashboard updates.
