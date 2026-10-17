@@ -1,0 +1,529 @@
+{
+  "name": "Moti Packaging Enquiry Intake",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "Hi there! 👋\nMy name is Ramesh. How can I assist you today?",
+        "options": {}
+      },
+      "id": "caad81da-bf36-4416-8223-6b85dd33ac2e",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -5200,
+        -7200
+      ],
+      "webhookId": "6f4c48e3-21ed-4c09-9163-c1b3118d78a5"
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "# Mock cache of previously seen emails and enquiry texts\nseen_emails = [\"old.customer@example-corp.in\", \"repeat@samplemart.com\", \"duplicate@test.com\", \"priya@greenleaf.in\"]\n\nseen_texts = [\"need 1000 pet jars 200 mm diameter for honey, deliver to delhi\"]\n\n# Track emails/texts seen earlier in this batch as well\nbatch_emails = []\nbatch_texts = []\n\nresults = []\nfor item in _items:\n    src = item[\"json\"]\n    chat_text = str(src.get(\"chatInput\", \"\")).strip()\n    session = str(src.get(\"sessionId\", \"\"))\n    # Pick the first token that looks like an email address from the chat text\n    found_email = \"\"\n    for tok in chat_text.replace(\",\", \" \").replace(\";\", \" \").replace(\"<\", \" \").replace(\">\", \" \").split():\n        tok = tok.strip(\".()\")\n        if \"@\" in tok and \".\" in tok.split(\"@\")[-1]:\n            found_email = tok\n            break\n    data = {\n        \"enquiry_id\": \"ENQ-\" + (session[:8] if session else \"CHAT\"),\n        \"source\": \"Chat\",\n        \"sender_email\": found_email,\n        \"raw_text\": chat_text,\n        \"received_at\": str(src.get(\"receivedAt\", \"\"))\n    }\n    email = str(data.get(\"sender_email\", \"\")).strip().lower()\n    text = \" \".join(str(data.get(\"raw_text\", \"\")).lower().split())\n\n    is_dup = (\n        email in seen_emails\n        or text in seen_texts\n        or email in batch_emails\n        or text in batch_texts\n    )\n\n    if is_dup:\n        data[\"is_duplicate\"] = True\n        data[\"status\"] = \"Possible duplicate enquiry\"\n    else:\n        data[\"is_duplicate\"] = False\n\n    batch_emails.append(email)\n    batch_texts.append(text)\n    results.append({\"json\": data})\n\nreturn results\n\n"
+      },
+      "id": "988ef473-2a81-4571-ad33-1f6869bf44c8",
+      "name": "Duplicate Detection",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -4864,
+        -6816
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "not-dup",
+              "leftValue": "={{ $json.is_duplicate }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "979f08f7-62b5-41a8-96ae-a09e913939b5",
+      "name": "Is Not Duplicate",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -4544,
+        -7136
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Enquiry ID: {{ $json.enquiry_id }}\nSender email: {{ $json.sender_email }}\nReceived at: {{ $json.received_at }}\n\nRaw enquiry text:\n{{ $json.raw_text }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are an enquiry classification specialist for Moti Packaging Industries (MPI). MPI ONLY manufactures: composite paper cans, rigid paper tubes, and paper core containers. Analyze the raw enquiry text, extract the structured fields, and classify EACH requested item strictly into one of these 3: (1) \"Ready for quotation\": all critical details (dimensions: diameter and height, quantity, application/location) are present AND the product is composite paper packaging. (2) \"More information required\": critical packaging dimensions (diameter or height) or quantity are missing or ambiguous. (3) \"Not currently serviceable\": the customer is requesting packaging that MPI does not make (e.g., pure plastic containers, metal drums, glass jars, wooden crates, corrugated cartons) OR non-feasible dimensions. Strictly enforce these rules and output valid JSON matching the required schema. MULTIPLE ITEMS: If the customer lists multiple distinct packaging items (e.g., 5 items), extract each product as a separate object inside the \"items\" array. If only 1 item is requested, return an array with 1 item. Do not merge different product dimensions or quantities into a single item. Maintain strict MPI business rules for each item's individual classification. Preserve customer_name, company_name, contact, delivery_location, and required_date at the top level (they are shared by all items). Extraction rules: contact - whenever the message contains BOTH an email address and a phone/mobile number, extract BOTH into contact separated by a pipe symbol in the format \"<email> | <phone>\" (for example: \"sivanshdey451@gmail.com | 7456851235\"); NEVER drop or omit the email address when an email is present in the text; if only one of them is present, return just that value. Return null for any field that is not explicitly stated, especially diameter and height - NEVER guess or infer dimensions. quantity must be a number or null. printing_required is true/false only if stated, otherwise null. required_date is the requested delivery date or deadline as a string, or null if none is stated. For each item, missing_fields lists the names of that item's fields that are null and needed for a quotation. For each item, followup_draft is a polite, professional 2-3 sentence acknowledgement/reply to the customer, based on that item's classification and any missing details (ask for the missing information when classification is More information required; politely explain MPI does not make the requested packaging when Not currently serviceable; confirm the enquiry is being prepared for quotation when Ready for quotation). For each item, human_review_required is true when the item is ambiguous, unusual, or classified Not currently serviceable; otherwise false."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "4295bdcd-dd27-4c30-a8f7-1aeb20200b9d",
+      "name": "AI Extraction & Classification",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -4320,
+        -6464
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5.4-mini",
+          "cachedResultName": "gpt-5.4-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "e4240bcc-18db-4142-aa9f-966a758329aa",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -4368,
+        -6064
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "Gateway credits",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\"type\":\"object\",\"properties\":{\"customer_name\":{\"type\":[\"string\",\"null\"]},\"company_name\":{\"type\":[\"string\",\"null\"]},\"contact\":{\"type\":[\"string\",\"null\"],\"description\":\"Customer contact details. If the text contains BOTH an email address and a phone/mobile number, return both as <email> | <phone> (e.g. sivanshdey451@gmail.com | 7456851235). Never drop the email when one is present. If only one is present, return just that value.\"},\"delivery_location\":{\"type\":[\"string\",\"null\"]},\"required_date\":{\"type\":[\"string\",\"null\"]},\"items\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"product_category\":{\"type\":[\"string\",\"null\"]},\"diameter\":{\"type\":[\"string\",\"null\"]},\"height\":{\"type\":[\"string\",\"null\"]},\"quantity\":{\"type\":[\"number\",\"null\"]},\"application\":{\"type\":[\"string\",\"null\"]},\"printing_required\":{\"type\":[\"boolean\",\"null\"]},\"classification\":{\"type\":\"string\",\"enum\":[\"Ready for quotation\",\"More information required\",\"Not currently serviceable\"]},\"missing_fields\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"human_review_required\":{\"type\":\"boolean\"},\"followup_draft\":{\"type\":\"string\"}},\"required\":[\"product_category\",\"diameter\",\"height\",\"quantity\",\"application\",\"printing_required\",\"classification\",\"missing_fields\",\"human_review_required\",\"followup_draft\"]}}},\"required\":[\"customer_name\",\"company_name\",\"contact\",\"delivery_location\",\"required_date\",\"items\"]}"
+      },
+      "id": "ef857fd3-5f9c-47e8-a566-98fec8af95b5",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -4144,
+        -6080
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output.items",
+        "include": "allOtherFields",
+        "options": {
+          "destinationFieldName": "item"
+        }
+      },
+      "id": "973e9969-3549-4b97-a377-0869cdd2599e",
+      "name": "Split Out",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1.1,
+      "position": [
+        -3968,
+        -6656
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "enq-id",
+              "name": "ENQ - Id",
+              "value": "={{ \"ENQ-\" + Math.random().toString(16).slice(2).padEnd(8, \"0\").slice(0, 8) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "eecc615e-040c-4b56-bc93-9689143329a0",
+      "name": "Attach Enquiry ID",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -3840,
+        -6144
+      ]
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "results = []\n\nfor idx, item in enumerate(_items):\n    data = item.get(\"json\", {})\n    top = data.get(\"output\", {}) or {}\n    out = data.get(\"item\", {}) or {}\n    \n    # 1. Enquiry ID (agar pichle node se miss ho jaye toh auto-generate ENQ-1001, etc.)\n    enquiry_id = data.get(\"ENQ - Id\")\n    if not enquiry_id or enquiry_id == \"N/A\":\n        enquiry_id = f\"ENQ-{1001 + idx}\"\n    \n    # 2. Printing Requirement Formatting\n    printing = out.get(\"printing_required\")\n    if printing is True:\n        printing_str = \"Yes\"\n    elif printing is False:\n        printing_str = \"No\"\n    else:\n        printing_str = \"N/A\"\n        \n    # 3. Missing Fields Formatting\n    missing = out.get(\"missing_fields\") or []\n    if isinstance(missing, list) and len(missing) > 0:\n        missing_str = \", \".join(str(m) for m in missing)\n    else:\n        missing_str = \"None\"\n        \n    # 4. Required Date Check\n    req_date = top.get(\"required_date\") or \"N/A\"\n    \n    # 5. Human Review Flag\n    human_req = \"YES\" if out.get(\"human_review_required\") else \"NO\"\n    \n    # 15 Columns matching Assignment & Google Sheets\n    results.append({\n        \"json\": {\n            \"ENQ - Id\": enquiry_id,\n            \"Customer Name\": top.get(\"customer_name\") or \"N/A\",\n            \"Company Name\": top.get(\"company_name\") or \"N/A\",\n            \"Contact\": top.get(\"contact\") or \"N/A\",\n            \"Product Category\": out.get(\"product_category\") or \"N/A\",\n            \"Diameter\": out.get(\"diameter\") or \"N/A\",\n            \"Height\": out.get(\"height\") or \"N/A\",\n            \"Quantity\": out.get(\"quantity\") or \"N/A\",\n            \"Application\": out.get(\"application\") or \"N/A\",\n            \"Printing Requirement\": printing_str,\n            \"Delivery Location\": top.get(\"delivery_location\") or \"N/A\",\n            \"Required Date\": req_date,\n            \"Classification\": out.get(\"classification\") or \"N/A\",\n            \"Missing Fields\": missing_str,\n            \"Human Review Needed\": human_req,\n            \"Follow-up Draft\": out.get(\"followup_draft\") or \"N/A\"\n        }\n    })\n\nreturn results"
+      },
+      "id": "39403962-f4c3-4eaf-92b6-887101db4ffc",
+      "name": "Format Processed Leads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3664,
+        -6464
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1VHJo5Zhi2eK74F8xpFFRyPZAhCC_slG2dTTAKpB4zNc",
+          "mode": "list",
+          "cachedResultName": "MPI Enquiries Dashboard",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1VHJo5Zhi2eK74F8xpFFRyPZAhCC_slG2dTTAKpB4zNc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1VHJo5Zhi2eK74F8xpFFRyPZAhCC_slG2dTTAKpB4zNc/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "schema": [
+            {
+              "id": "ENQ - Id",
+              "displayName": "ENQ - Id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Customer Name",
+              "displayName": "Customer Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Contact",
+              "displayName": "Contact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Product Category",
+              "displayName": "Product Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Diameter",
+              "displayName": "Diameter",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Height",
+              "displayName": "Height",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Quantity",
+              "displayName": "Quantity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Application",
+              "displayName": "Application",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Classification",
+              "displayName": "Classification",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Missing Fields",
+              "displayName": "Missing Fields",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Human Review Needed",
+              "displayName": "Human Review Needed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "bcfc6eb8-5aa8-44fa-a200-70beef8d723f",
+      "name": "Save to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -3072,
+        -7104
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hrDOonmJsSMgecBg",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "# Google Sheets failure capture and alert payload (Python)\noutput_items = []\n\nfor item in _items:\n    raw_json = item.get(\"json\", {})\n    \n    # Extract error message if present\n    error_obj = raw_json.get(\"error\", {})\n    if isinstance(error_obj, dict):\n        error_msg = error_obj.get(\"message\", \"Google Sheets API unreachable or quota exceeded\")\n    else:\n        error_msg = str(error_obj) if error_obj else \"Google Sheets API unreachable or quota exceeded\"\n    \n    alert_payload = {\n        \"alert_type\": \"CRITICAL_PIPELINE_FAILURE\",\n        \"target_service\": \"Google Sheets\",\n        \"status\": \"FAILED_TO_SYNC\",\n        \"error_details\": error_msg,\n        \"failed_lead\": {\n            \"enquiry_id\": raw_json.get(\"ENQ - Id\", raw_json.get(\"Enquiry ID\", \"UNKNOWN\")),\n            \"customer_name\": raw_json.get(\"Customer Name\", \"N/A\"),\n            \"contact\": raw_json.get(\"Contact\", \"N/A\"),\n            \"classification\": raw_json.get(\"Classification\", \"N/A\")\n        },\n        \"recovery_note\": \"Lead data safely preserved in execution context for manual replay.\"\n    }\n    \n    output_items.append({\"json\": alert_payload})\n\nreturn output_items"
+      },
+      "id": "21045b4c-3324-4703-8c5e-c99d7eab1191",
+      "name": "Failure Alert Logger",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2880,
+        -6288
+      ]
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "results = []\n\nfor idx, item in enumerate(_items):\n    data = item.get(\"json\", {})\n    \n    enquiry_id = data.get(\"enquiry_id\")\n    if not enquiry_id or enquiry_id == \"N/A\":\n        enquiry_id = f\"ENQ-DUP-{1001 + idx}\"\n\n    results.append({\n        \"json\": {\n            \"ENQ - Id\": enquiry_id,\n            \"Customer Name\": \"N/A\",\n            \"Company Name\": \"N/A\",\n            \"Contact\": data.get(\"sender_email\") or \"N/A\",\n            \"Product Category\": \"N/A\",\n            \"Diameter\": \"N/A\",\n            \"Height\": \"N/A\",\n            \"Quantity\": \"N/A\",\n            \"Application\": \"N/A\",\n            \"Printing Requirement\": \"N/A\",\n            \"Delivery Location\": \"N/A\",\n            \"Required Date\": \"N/A\",\n            \"Classification\": \"Possible duplicate enquiry\",\n            \"Missing Fields\": \"Duplicate Entry\",\n            \"Human Review Needed\": \"NO\",\n        \"Follow-up Draft\": \"Thank you for reaching out. We have logged your enquiry, but our team is already processing your earlier request.\"\n        }\n    })\n\nreturn results"
+      },
+      "id": "c2b4bfa5-9de3-4f3d-8fdf-73718febc788",
+      "name": "Format Duplicate Leads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3856,
+        -7344
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Duplicate Detection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Duplicate Detection": {
+      "main": [
+        [
+          {
+            "node": "Is Not Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Not Duplicate": {
+      "main": [
+        [
+          {
+            "node": "AI Extraction & Classification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Duplicate Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Extraction & Classification": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Extraction & Classification",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Extraction & Classification",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Attach Enquiry ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Enquiry ID": {
+      "main": [
+        [
+          {
+            "node": "Format Processed Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Processed Leads": {
+      "main": [
+        [
+          {
+            "node": "Save to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Google Sheets": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Failure Alert Logger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Duplicate Leads": {
+      "main": [
+        [
+          {
+            "node": "Save to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "0712393f-82cd-4056-8fc7-a40325cc3362",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d8de8a9d2e5811d45ca3e0b74fec16ba6557e2f1ff0c15bfcc3d9f120d8ed019"
+  },
+  "nodeGroups": [
+    {
+      "id": "6cf7bfe6-b9f0-4dfa-a94c-008992291fa1",
+      "name": "Classify and draft reply",
+      "nodeIds": [
+        "4295bdcd-dd27-4c30-a8f7-1aeb20200b9d",
+        "e4240bcc-18db-4142-aa9f-966a758329aa",
+        "ef857fd3-5f9c-47e8-a566-98fec8af95b5",
+        "973e9969-3549-4b97-a377-0869cdd2599e",
+        "eecc615e-040c-4b56-bc93-9689143329a0",
+        "39403962-f4c3-4eaf-92b6-887101db4ffc"
+      ],
+      "description": "Reads the enquiry text, classifies it against MPI rules, drafts a follow-up reply and prepares the sheet row"
+    }
+  ],
+  "id": "hzhkhuAJ6iZrDacc",
+  "tags": []
+}
