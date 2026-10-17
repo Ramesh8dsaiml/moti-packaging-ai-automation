@@ -51,6 +51,6 @@ flowchart TD
     %% Error Catching
     E -. Error Catch .-> I[⚠️ Failure Alert Logger]
 
-
+```
 
 ⚙️ Core Technical Capabilities & Logic
