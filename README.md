@@ -1,4 +1,4 @@
- # 📦 Moti Packaging Industries — Automated Lead Intake & Intelligence Pipeline
+# 📦 Moti Packaging Industries — Automated Lead Intake & Intelligence Pipeline
 
 An end-to-end automated B2B sales lead qualification and extraction pipeline built using **n8n**, **OpenAI (GPT-4o-mini)**, **Python / JavaScript Code Nodes**, and **Google Sheets**.
 
@@ -50,8 +50,3 @@ flowchart TD
     
     %% Error Catching
     E -. Error Catch .-> I[⚠️ Failure Alert Logger]
-
-
----
-
- 
