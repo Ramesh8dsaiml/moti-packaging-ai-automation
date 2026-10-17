@@ -52,6 +52,72 @@ flowchart TD
     E -. Error Catch .-> I[⚠️ Failure Alert Logger]
 
 
+---
 
+## ⚙️ Core Technical Logic & Implementation
+
+### 1. Pre-LLM Duplicate Interception
+- Raw incoming chat messages are evaluated against recent leads before invoking the language model.
+- Duplicates are routed through `Format Duplicate Leads` straight to Google Sheets with status `Possible Duplicate`, saving OpenAI API tokens and preventing multi-agent overlaps.
+
+### 2. Zero-Hallucination AI Extraction (`GPT-4o-mini`)
+- The `AI Extraction & Classification` sub-agent uses the **Structured Output Parser** to enforce strict JSON compliance.
+- If any technical specification (inner diameter, height, closure) is missing, it is mapped strictly to `null` / `N/A` rather than estimated or hallucinated.
+
+### 3. Automated Scope Vetting
+- **In-Scope:** Composite paper canisters, spiral-wound paper tubes, and rigid core containers.
+- **Out-of-Scope:** 100% tinplate metal cans, glass containers, and plastic blow-molded bottles.
+- Out-of-scope requests are auto-classified under `Not Currently Serviceable`, removing manual engineering overhead.
+
+### 4. Resilient Error Handling
+- Downstream database or write failures trigger the `Failure Alert Logger` without breaking the live execution pipeline.
+
+---
+
+## 📋 Data Contract & Extracted Schema
+
+The pipeline parses 11 core attributes from every incoming raw query:
+
+| Field Name | Type | Description / Constraint |
+| :--- | :--- | :--- |
+| `ENQ - Id` | `String` | Unique deterministic identifier (e.g., `ENQ-fdad0b96`) |
+| `Customer Name` | `String` | Contact person name (`N/A` if omitted) |
+| `Company Name` | `String` | Business entity name |
+| `Contact` | `String` | Phone number or corporate email address |
+| `Product Category` | `String` | Composite Canister, Tin Can, Paper Tube / Core, Other |
+| `Inner Diameter` | `Number / null` | Inner diameter in millimeters |
+| `Height / Length` | `Number / null` | Height / length in millimeters |
+| `Closure Type` | `String / null` | Peel-off foil, metal plug, plastic cap, or paper plug |
+| `Quantity` | `Number / null` | Requested order quantity / batch size |
+| `Intended Content` | `String / null` | Product to pack (e.g., tea, spices, apparel, cosmetics) |
+| `Lead Status` | `String` | `Ready for Quotation`, `Information Pending`, `Human Review Needed`, `Not Currently Serviceable`, `Possible Duplicate` |
+
+---
+
+## 📊 Live Executive Analytics & Reporting Dashboard
+
+The automation feeds real-time operational data into the [MPI Enquiries Dashboard](https://docs.google.com/spreadsheets/u/0/?authuser=0&usp=sheets_web) with automated metrics powered by Apps Script (`dashboard_script.js.txt`):
+
+### Funnel & Qualification Breakdown (109 Ingested Leads)
+- **Ready for Quotation (43.0% / 52 Leads):** Fully defined specifications; routed instantly to estimating for tooling and unit cost calculations.
+- **Information Pending (36.4% / 44 Leads):** Incomplete technical parameters; flagged for automated specification follow-up.
+- **Not Currently Serviceable (16.5% / 20 Leads):** Out-of-scope materials (tin cans, rigid plastics); filtered out to protect sales capacity.
+- **Human Review Needed (20 Leads):** Edge cases, composite hybrids, or non-standard requirements.
+- **Possible Duplicate (4.1% / 5 Leads):** Intercepted pre-LLM to conserve API quota.
+
+---
+
+## 🚀 Setup & Deployment Guide
+
+### Prerequisites
+- Active [n8n cloud or self-hosted instance](https://rameshworkflowsystem.app.n8n.cloud/projects/RpjlvgLKzPkeOMnK) (v1.0+)
+- OpenAI API key with `gpt-4o-mini` access
+- Google Cloud service account or OAuth credentials configured for Google Sheets read/write
+
+### Deployment Steps
+1. **Clone the Repository:**
+   ```bash
+   git clone [https://github.com/Ramesh8dsaiml/moti-packaging-ai-automation.git](https://github.com/Ramesh8dsaiml/moti-packaging-ai-automation.git)
+   cd moti-packaging-ai-automation
 
  
